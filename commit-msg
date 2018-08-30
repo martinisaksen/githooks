@@ -1,0 +1,41 @@
+#!C:/Program\ Files/Git/usr/bin/sh.exe
+
+COMMIT_MESSAGE_FILE=$1  
+COMMIT_MESSAGE_LINE1=$(head -n 1 $COMMIT_MESSAGE_FILE)
+COMMIT_MESSAGE_TICKETS=$(echo $COMMIT_MESSAGE_LINE1 | grep -E -o "([A-Z]+-[0-9]+)")
+BRANCH_NAME_INITIAL=$(git rev-parse --abbrev-ref HEAD | grep -E -o "[A-Z]+" | head -1 )
+BRANCH_NAME_TICKETS=$(git rev-parse --abbrev-ref HEAD | grep -E -o "(-[0-9]+)")
+TICKETS_TO_APPEND=()
+
+# Loop through the tickets referenced in the branch name
+for ticket in $BRANCH_NAME_TICKETS
+do
+	# Add the project initials to the ticket numbers
+	BRANCH_NAME_TICKET="$BRANCH_NAME_INITIAL$ticket"
+	echo "$BRANCH_NAME_TICKET found in branch name."
+
+	# Loop through the tickets referenced in the commit message and see if any have already been included
+	exists="false"
+
+	for COMMIT_MESSAGE_TICKET in $COMMIT_MESSAGE_TICKETS;
+	do
+		if [[ "$COMMIT_MESSAGE_TICKET" = "$BRANCH_NAME_TICKET" ]]; then
+			echo "$BRANCH_NAME_TICKET is the same as $COMMIT_MESSAGE_TICKET in commit message. Skipping."
+			exists="true"
+			break
+		fi
+	done
+
+	if [[ $exists = "false" ]]; then
+		TICKETS_TO_APPEND+=("$BRANCH_NAME_TICKET")
+		echo "$BRANCH_NAME_TICKET was not found in commit message."
+	fi
+done
+
+for TICKET in ${TICKETS_TO_APPEND[@]};
+do
+	sed -i.bak -e "1s/^/[$TICKET] /" $1
+	echo "Added $TICKET to commit message"
+done
+
+exit 0 
