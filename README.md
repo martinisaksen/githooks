@@ -1,0 +1,2 @@
+# githooks
+Generic git hooks
