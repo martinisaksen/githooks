@@ -2,10 +2,16 @@
 
 COMMIT_MESSAGE_FILE=$1  
 COMMIT_MESSAGE_LINE1=$(head -n 1 $COMMIT_MESSAGE_FILE)
+COMMIT_MESSAGE_MERGE=$(echo $COMMIT_MESSAGE_LINE1 | grep -E -o "Merge")
 COMMIT_MESSAGE_TICKETS=$(echo $COMMIT_MESSAGE_LINE1 | grep -E -o "([A-Z]+-[0-9]+)")
-BRANCH_NAME_INITIAL=$(git rev-parse --abbrev-ref HEAD | grep -E -o "[A-Z]+" | head -1 )
+BRANCH_NAME_INITIAL=$(git rev-parse --abbrev-ref HEAD | grep -E -o "([A-Z]+-[0-9]+)" | grep -E -o "[A-Z]+" | head -1 )
 BRANCH_NAME_TICKETS=$(git rev-parse --abbrev-ref HEAD | grep -E -o "(-[0-9]+)")
 TICKETS_TO_APPEND=()
+
+if [[ "$COMMIT_MESSAGE_MERGE" ]]; then
+	echo "This is a merge and does not need an associated JIRA ticket added to the commit message."
+	exit 0
+fi
 
 # Loop through the tickets referenced in the branch name
 for ticket in $BRANCH_NAME_TICKETS
